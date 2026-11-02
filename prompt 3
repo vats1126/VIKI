@@ -1,0 +1,90 @@
+# MASTER PROMPT 3 — FINAL RUBRIC LOCKDOWN, LIVE DEMO SEEDING & 7:45 AM EVALUATION PACK
+
+You are a Principal Full-Stack Architect and Competition Technical Lead preparing the final submission package for the **Round 2 AI Visual Quality Inspection Challenge** (Submission: 7:00 AM | Live Judging: 7:45 AM – 11:15 AM).
+
+The application, Minimalist Dark Neo-Brutalist UI, PostgreSQL database, and Celery + Redis worker are up and passing 13 tests. Execute this final hardening, seeding, and verification pass without breaking any existing functionality or UI styling.
+
+---
+
+## 1. DEEP RUBRIC & SHA256 INTEGRITY AUDIT
+
+1. **SHA256 Checksum Audit:**
+   - In Report 1, 72/74 files matched `SHA256SUMS.txt`. Inspect the exact output of `shasum -a 256 -c SHA256SUMS.txt` to see which 2 files differed and why.
+   - Ensure `Model/inference.py`, `Model/classifier.npz`, `Model/model_metadata.json`, `product_details.csv`, `Samples/labels.csv`, all 60 `Samples/images/*`, and all 3 `Validation/*` files are 100% unmodified and clean of stray cache/temp artifacts.
+
+2. **Cross-Check Every Requirement in `Round2_Student_Challenge_Brief.docx` & `Round2_Model_and_Data_Guide.docx`:**
+   - Verify that every required field, status code, role restriction, batch constraint (1–10 images), validation bound (JPG/PNG decoded, <= 5 MiB, 64x64 to 4096x4096 px), and confusion matrix metric (TP, FP, TN, FN, Defect Recall) matches the official brief 100%.
+
+---
+
+## 2. UPGRADE `seed_data` WITH REALISTIC PRE-POPULATED TELEMETRY
+
+When evaluators log in at 7:45 AM using the 1-Click Evaluator buttons on `/login/`, the dashboards should immediately showcase rich, real-inference data rather than empty tables.
+
+Update `python manage.py seed_data` so that (in addition to registering `P-PLATE01` and creating `admin`, `engineer1`, `engineer2`, and `supervisor`) it idempotently seeds a baseline set of real inspections if no seeded demo inspections exist:
+1. **`engineer1` Single Inspections:**
+   - Run real inference (`Model.inference.predict`) on 2 Normal and 2 Defective sample images (e.g., `inspection_001.png` to `inspection_004.jpg`) and save them as `COMPLETED` inspections under `engineer1`.
+   - Run real validation on `Validation/not_an_image.jpg` and save 1 `FAILED` inspection record under `engineer1` with its exact failure reason.
+2. **`engineer1` Mixed Batch (`InspectionBatch`):**
+   - Create 1 completed mixed batch of 4 items under `engineer1` containing 3 valid sample images (`COMPLETED` with real predictions) and `Validation/too_small.png` (`FAILED` with dimension error), demonstrating non-blocking mixed batch telemetry.
+3. **`engineer2` Single Inspections (Horizontal Isolation Proof):**
+   - Create 2 `COMPLETED` inspections under `engineer2` (using `inspection_005.png` and `inspection_006.jpg`) so evaluators switching between `ENGINEER 1` and `ENGINEER 2` immediately see strict data isolation in action.
+4. **Supervisor Reviews (`InspectionReview` Audit Proof):**
+   - Create 1 **Confirmed** `InspectionReview` by `supervisor` on one of `engineer1`'s completed inspections.
+   - Create 1 **Overridden** `InspectionReview` (`is_override=True`) by `supervisor` on another completed inspection with a realistic industrial audit comment (e.g., `"Optical glare on bevel edge verified under manual magnifier; overriding model classification."`), proving that the original model prediction remains locked and immutable while the supervisor audit badge updates.
+5. **Pre-Compute 60-Sample Evaluation Metrics:**
+   - Ensure the 60-sample evaluation report is generated and ready so `/metrics/` renders instantaneously on first load.
+
+---
+
+## 3. EXPAND AUTOMATED TEST SUITE (TARGET: 20+ TESTS)
+
+Add the following high-value edge-case tests to `inspections/tests/` and verify all tests pass via both `pytest` and `python manage.py test`:
+
+1. **`test_review_rejected_on_failed_or_queued_inspection`:** Verify that a Supervisor attempting to submit a review on a `FAILED` or `QUEUED` inspection receives **HTTP 400 Bad Request**.
+2. **`test_unauthenticated_api_and_view_access_blocked`:** Verify that unauthenticated requests to single upload, batch upload, batch status API, and supervisor review API are rejected/redirected (`401`/`403`/`302`).
+3. **`test_zero_byte_empty_file_rejected`:** Verify that uploading an empty `0`-byte `.png` file is caught by the validation gate before inference and logged as `FAILED`.
+4. **`test_exceeding_max_dimensions_rejected`:** Verify that an image with width or height `> 4096` pixels is rejected by `validators.py` before inference.
+5. **`test_60_sample_evaluation_accuracy_and_recall`:** Programmatically test the evaluation engine on `Samples/labels.csv`, asserting `total == 60`, `TP == 30`, `TN == 30`, `FP == 0`, `FN == 0`, `defect_recall == 1.0` (or `100.0%`), and verifying that `Validation/` files are never included.
+6. **`test_multiple_supervisor_review_updates_preserve_original_prediction`:** Verify that if a Supervisor updates an existing review from `Normal` to `Defective`, the `InspectionReview` record updates cleanly while `Inspection.predicted_class`, `Inspection.confidence`, `Inspection.defect_probability`, and `Inspection.model_version` remain 100% untouched.
+7. **`test_admin_only_product_management`:** Verify that an `Engineer` or `Supervisor` cannot create or delete products (`HTTP 403`).
+
+---
+
+## 4. ONE-COMMAND 7:45 AM STARTUP SCRIPT (`start_platform.sh`)
+
+Create an executable shell script `start_platform.sh` (`chmod +x start_platform.sh`) in the workspace root that evaluators or team members can run after a laptop sleep/reboot:
+1. Checks and starts PostgreSQL and Redis via `brew services` if not running.
+2. Activates `./venv/bin/activate`.
+3. Runs `python manage.py migrate --noinput`.
+4. Runs `python manage.py seed_data`.
+5. Runs `python manage.py evaluate_samples`.
+6. Safely restarts the background Celery worker (`celery -A config worker --pool=solo -l info`) and Django server (`python manage.py runserver 0.0.0.0:8000`).
+7. Performs a quick HTTP healthcheck against `http://127.0.0.1:8000/login/` and prints a clear green readiness banner with the URL and test credentials.
+
+---
+
+## 5. CREATE `JUDGE_DEMO_GUIDE.md` (3-MINUTE DEMO & VIVA CHEAT SHEET)
+
+Create a concise, high-impact `JUDGE_DEMO_GUIDE.md` in the root directory tailored for the team's 7:45 AM – 11:15 AM evaluation:
+1. **3-Minute Step-by-Step Live Demo Script:**
+   - Exact click-by-click flow (Admin Product `P-PLATE01` check -> Engineer 1 Single Upload -> Engineer 1 Mixed Batch Upload with live Celery/Redis progress -> Engineer 2 login proving horizontal isolation -> Supervisor login overriding a prediction -> 60-Sample Confusion Matrix & Limitations).
+2. **Live Security Proof Commands (`curl`):**
+   - Ready-to-copy terminal commands demonstrating:
+     - An Engineer attempting to hit the Supervisor Review API directly and receiving `HTTP 403 Forbidden`.
+     - Running the 20-test automated suite in 2 seconds (`pytest -v`).
+     - Running the 60-sample evaluation CLI (`python manage.py evaluate_samples`).
+3. **Viva Code Map (Exact File & Line References):**
+   - Where `Model/inference.py` is called.
+   - Where Pillow double-pass validation (`verify()` + `load()`) blocks `not_an_image.jpg`, `corrupt_image.png`, and `too_small.png`.
+   - Where RBAC (`HTTP 403`) and Engineer horizontal isolation are enforced.
+   - Where Celery + Redis asynchronous task queuing and DRF status polling live.
+   - Why the synthetic model achieves 100% recall on the 60 samples and the 3 real-world factory limitations documented in `model_metadata.json`.
+
+---
+
+## 6. FINAL VERIFICATION
+
+1. Run `python manage.py seed_data` and verify the pre-populated demo inspections and supervisor reviews appear cleanly in the UI.
+2. Run `pytest -v` and `python manage.py test` and confirm all 20+ tests pass.
+3. Run `./start_platform.sh` and confirm all background services (PostgreSQL, Redis, Celery, Django) are active and serving `http://127.0.0.1:8000/`.
