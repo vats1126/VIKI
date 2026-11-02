@@ -1,0 +1,93 @@
+# MASTER PROMPT 2 — MINIMALIST DARK NEO-BRUTALIST UI OVERHAUL & RUBRIC AUDIT POLISH
+
+You are a Principal Industrial UI/UX Engineer and Senior Django Architect.
+
+The backend, PostgreSQL database, Celery + Redis batch worker, and automated test suite are live and passing. Your task now is to upgrade the entire frontend to a **Minimalist Dark-Themed Neo-Brutalist Industrial Interface**, verify the `InspectionReview` relational audit model, and ensure all automated and live tests pass with zero regressions.
+
+Do NOT break any working backend routes, URL names, form field names, or DOM IDs required by `batch_poller.js` or the automated test suite.
+
+---
+
+## 1. DESIGN SYSTEM: MINIMALIST DARK NEO-BRUTALISM
+
+Refactor `static/css/custom.css` and all templates in `templates/` (`base.html`, `login.html`, `dashboard.html`, `single_upload.html`, `batch_upload.html`, `batch_detail.html`, `inspection_detail.html`, `supervisor_queue.html`, `metrics_dashboard.html`, `products.html`) to strictly follow a **Minimalist Dark Neo-Brutalist** aesthetic:
+
+### 1.1 Color Palette (CSS Variables in `:root`)
+- **Canvas Background (`--bg-main`):** `#0A0B0E` (Deep Obsidian)
+- **Surface / Card Background (`--bg-panel`):** `#12141A` (Matte Charcoal)
+- **Elevated / Input Background (`--bg-elevated`):** `#181B24`
+- **Structural Border (`--border-strong`):** `#2E3440` (Default `2px solid`) and `#E2E8F0` (Active/High-contrast `2px solid`)
+- **Hard Brutalist Shadow (`--shadow-brutal`):** `4px 4px 0px #000000` (Strictly `0px` blur everywhere)
+- **Accent Shadow (`--shadow-accent`):** `4px 4px 0px #00E5FF`
+- **Primary Text (`--text-primary`):** `#F1F5F9`
+- **Muted / Telemetry Label Text (`--text-muted`):** `#8A94A6`
+- **Primary Industrial Accent (`--accent-cyan`):** `#00E5FF`
+- **Semantic Status Colors:**
+  - **NORMAL / PASS (`--status-normal`):** `#00FF66` (Signal Emerald border & text on `#052E16` background)
+  - **DEFECTIVE / FAIL (`--status-defect`):** `#FF2A55` (High-Voltage Crimson border & text on `#3B0712` background)
+  - **VALIDATION FAILED / WARNING (`--status-warn`):** `#FFB800` (Hazard Amber border & text on `#332100` background)
+  - **QUEUED / PROCESSING (`--status-queue`):** `#00E5FF` (Cyber Cyan border & text on `#042630` background)
+
+### 1.2 Typography & Brutalist Geometry
+- Load Google Fonts in `base.html`: `'Space Grotesk'` (weights 500, 700) for headings/UI and `'JetBrains Mono'` (weights 400, 600, 700) for all IDs (`P-PLATE01`), filenames, confidence percentages, defect probabilities, timestamps, confusion matrix cells, and status badges.
+- **Zero Rounded Corners:** Enforce `border-radius: 0px !important;` across all cards, buttons, inputs, selects, alerts, badges, modals, progress bars, and tables.
+- **No Gradients or Soft Shadows:** Remove all soft drop-shadows and gradients. Every card/panel must have `border: 2px solid var(--border-strong); background: var(--bg-panel); box-shadow: 4px 4px 0px #000000;`.
+- **Mechanical Button Physics:**
+  - Buttons must use uppercase `JetBrains Mono` or `Space Grotesk`, `font-weight: 700`, `letter-spacing: 0.05em`, `border: 2px solid #F1F5F9`, and `box-shadow: 3px 3px 0px #000000`.
+  - On `:hover`: `transform: translate(-1px, -1px); box-shadow: 4px 4px 0px var(--accent-cyan);`
+  - On `:active`: `transform: translate(2px, 2px); box-shadow: 1px 1px 0px #000000;`
+- **Minimalist Layout Discipline:**
+  - Eliminate decorative fluff, marketing text, or bloated hero banners.
+  - Use clean exposed grid borders, compact uppercase section headers (`01 // TELEMETRY`, `02 // UPLOAD GATE`, `03 // CONFUSION MATRIX`), and high-density tabular data with `font-variant-numeric: tabular-nums`.
+
+---
+
+## 2. SCREEN-BY-SCREEN UI REFINEMENTS
+
+1. **`base.html` (Top Industrial Command Bar):**
+   - Sharp `2px` bottom border (`#2E3440`), compact brand mark (`BIT-PLATE-CV // P-PLATE01`), active navigation links with hard bottom/box indicators, and a stark monospace role badge (`[ROLE: ENGINEER]`, `[ROLE: SUPERVISOR]`, `[ROLE: ADMIN]`) next to the username and Logout button.
+
+2. **`login.html` (Brutalist Auth Terminal + 1-Click Evaluator Autofill):**
+   - Centered dark brutalist login box with exposed `2px` border and `6px 6px 0px #000` shadow.
+   - Include a compact **"EVALUATOR QUICK-AUTH TERMINAL"** panel below the form featuring 4 brutalist buttons (`ADMIN`, `ENGINEER 1`, `ENGINEER 2`, `SUPERVISOR`). Clicking any button uses 3 lines of Vanilla JS to populate the real `username` and `password` fields and immediately submit the real `<form>`, preserving 100% backend session authentication while giving evaluators 1-click access.
+
+3. **`dashboard.html` (Engineer & Role Telemetry):**
+   - 4 sharp KPI blocks in a brutalist grid (Total Inspections, Normal Count, Defective Count, Validation Rejected) with large `JetBrains Mono` numbers and `2px` colored top/left accent bars.
+   - Clean inspection history table with dark rows, crisp `1px solid #222630` cell dividers, monospace confidence bars, and clear badges showing both `ORIGINAL PREDICTION` and `SUPERVISOR REVIEW` status.
+
+4. **`single_upload.html` & `batch_upload.html` (Industrial Dropzone):**
+   - Dashed `2px dashed #475569` upload zone that turns `2px solid #00E5FF` on dragover/file selection.
+   - Explicitly display the hardware constraints in a compact monospace spec strip: `FORMAT: JPG/PNG | MAX: 5.0 MiB | DIM: 64x64 TO 4096x4096 PX | BATCH: 1–10 FILES`.
+   - Show selected file names and sizes in a clean monospace preview list before submission.
+
+5. **`batch_detail.html` & `static/js/batch_poller.js` (Live Batch Telemetry):**
+   - Brutalist segmented/hard-edged progress bar (`border: 2px solid #F1F5F9; height: 24px; background: #0A0B0E;`) with a high-contrast fill.
+   - Live-updating item table where `QUEUED`, `PROCESSING`, `COMPLETED`, and `FAILED` states render with distinct brutalist badges and monospace confidence/error readouts.
+
+6. **`supervisor_queue.html` & `inspection_detail.html` (Immutable Audit Split-View):**
+   - Filter bar with sharp toggle buttons/selects for Prediction (`ALL` / `NORMAL` / `DEFECTIVE`) and Review State (`ALL` / `PENDING` / `REVIEWED`).
+   - On `inspection_detail.html`, present a strict **2-Column Split Architecture**:
+     - **Left Panel — `[IMMUTABLE MODEL TELEMETRY]`:** Displays the inspection image, `model_version` (`BIT-PLATE-CV-1.0`), original `predicted_class`, `confidence`, and `defect_probability` with a lock indicator (`LOCKED // ORIGINAL RECORD`).
+     - **Right Panel — `[SUPERVISOR AUDIT & OVERRIDE]`:** Displays the review form for Supervisors (Confirm or Override to `Normal`/`Defective` + audit comment) and the complete review audit trail (Reviewer username, timestamp, decision, override flag, and comment).
+
+7. **`metrics_dashboard.html` (60-Sample Evaluation Matrix):**
+   - Render the $2 \times 2$ Confusion Matrix as a bold, bordered industrial matrix table with `Actual Normal` / `Actual Defective` rows and `Predicted Normal` / `Predicted Defective` columns, highlighting `TN`, `FP`, `FN`, and `TP` in monospace blocks.
+   - Display `DEFECT RECALL`, `ACCURACY`, and `PRECISION` in high-contrast KPI blocks, alongside a stark bordered warning box explaining the synthetic dataset limitations.
+
+---
+
+## 3. SCHEMA & RUBRIC AUDIT CHECK (`InspectionReview` MODEL)
+
+Check `inspections/models.py`:
+- Ensure there is an explicit `InspectionReview` Django model with a ForeignKey/OneToOne relationship to `Inspection` (storing `inspection`, `reviewer`, `reviewed_class`, `is_override`, `comment`, `created_at`) as required by the challenge rubric.
+- Keep any existing review fields or properties on `Inspection` synchronized inside `save()` or view logic so that all existing templates, serializers, and automated tests continue to work without any breaking changes.
+- Verify that original model output fields (`predicted_class`, `confidence`, `defect_probability`, `model_version`) are never mutated when a Supervisor submits a review.
+
+---
+
+## 4. VERIFICATION & FINAL CHECKS
+
+1. Run `python manage.py makemigrations` and `python manage.py migrate` if `InspectionReview` was added or updated.
+2. Run `pytest` and `python manage.py test` and verify that all automated tests pass (100% green).
+3. Verify with `curl` or a quick Python check that `/login/`, `/`, `/upload/single/`, `/upload/batch/`, `/supervisor/`, and `/metrics/` render with the new Dark Neo-Brutalist stylesheet (`custom.css`) and HTTP 200 status codes.
+4. Ensure PostgreSQL, Redis, the Celery worker (`--pool=solo`), and Django `runserver` remain running cleanly in the background so the app can be inspected immediately at `http://127.0.0.1:8000/`.
