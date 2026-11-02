@@ -1,0 +1,51 @@
+# MASTER DIAGNOSTIC & FULL-SYSTEM INTEGRATION AUDIT
+
+You are a Principal Systems Architect and Code Quality Lead. Perform a rigorous, end-to-end diagnostic audit of the entire Django workspace for the Round 2 AI Visual Quality Inspection Platform. 
+
+Do not write new features. Instead, trace, verify, and diagnose every connection, permission barrier, asynchronous pipeline, and UI route to ensure absolute production readiness.
+
+---
+
+## 1. COMPONENT-BY-COMPONENT DIAGNOSTIC CHECKLIST
+
+Execute and verify each subsystem in order:
+
+### A. Database & Product Registration (`P-PLATE01`)
+- Verify PostgreSQL connection and ensure `inspection_db` is active.
+- Verify that Product `P-PLATE01` is correctly registered via `product_details.csv` matching all required fields.
+- Check that the `seed_data` management command runs cleanly without IntegrityErrors and populates the pre-seeded demo accounts (`admin`, `engineer1`, `engineer2`, `supervisor`) along with baseline inspections, mixed batches, and supervisor reviews.
+
+### B. Strict Image Validation Gate (`inspections/validators.py`)
+- Trace the Pillow double-pass validation workflow (`Image.open()`, `img.verify()`, re-opening, `img.load()`, and dimension/format checks).
+- Verify that `Validation/not_an_image.jpg`, `Validation/corrupt_image.png`, and `Validation/too_small.png` are intercepted and rejected *before* model inference, logging status `FAILED` with explicit failure reasons.
+- Verify that oversized files (>5 MiB or >4096 px) and empty 0-byte uploads are correctly blocked.
+
+### C. Frozen Model Integration (`Model/inference.py`)
+- Verify that `Model/inference.py`, `Model/classifier.npz`, and `Model/model_metadata.json` are untouched and loaded correctly via `sys.path` wiring.
+- Confirm that `predict()` outputs (`predicted_class`, `confidence`, `defect_probability`, `model_version="BIT-PLATE-CV-1.0"`) are stored immutably on successful inspections.
+
+### D. Asynchronous Pipeline (Celery + Redis)
+- Verify Redis broker connectivity on port 6379.
+- Verify Celery worker configuration (`backend/config/celery.py`) using `--pool=solo` for safe execution.
+- Trace batch processing (1–10 images): confirm that mixed batches process independently (valid images succeed while invalid ones fail gracefully without halting the queue).
+- Verify real-time status polling endpoints and frontend JS poller updates.
+
+### E. RBAC, Security & Data Isolation
+- **Administrator:** Full access to product catalog and Django admin.
+- **Engineer:** Restricted to selecting `P-PLATE01`, uploading single/batch items, and viewing *only* their own inspection history (`submitted_by=request.user`).
+- **Horizontal Isolation:** Verify that an Engineer querying another Engineer's inspection detail or batch status receives **HTTP 403 Forbidden**.
+- **Privilege Escalation:** Verify that an Engineer attempting to submit a Supervisor review (via UI or direct API `POST /api/inspections/<id>/review/`) is strictly blocked with **HTTP 403 Forbidden**.
+- **Review Immutability:** Verify that when a Supervisor reviews an inspection, a relational `InspectionReview` record is created, but original model prediction fields (`predicted_class`, `confidence`) remain 100% unmutated.
+
+### F. Evaluation Metrics Engine (`evaluate_samples`)
+- Run `python manage.py evaluate_samples` and verify that all 60 labeled sample images from `Samples/labels.csv` are evaluated.
+- Confirm exact $2 \times 2$ Confusion Matrix output (`TP`, `TN`, `FP`, `FN`), Defect Recall (`1.0`), Precision, and Accuracy calculations, ensuring `Validation/` files are strictly excluded.
+
+---
+
+## 2. AUTOMATED TEST SUITE EXECUTION
+
+Run the complete automated test suite and report results:
+```bash
+./venv/bin/pytest -v
+./venv/bin/python manage.py test
