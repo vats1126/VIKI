@@ -1,0 +1,34 @@
+You are a Senior Full-Stack Python Architect. Build a complete, working submission for the "Round 2 Student Challenge" (Automated Visual Inspection System for product P-PLATE01).
+
+### 1. CORE REQUIREMENTS (FROM START_HERE.txt)
+1. Register product `P-PLATE01` in the database (using `product_details.csv`).
+2. Use the existing `Model/inference.py` and `Model/classifier.npz` for real image inference. Do NOT mock predictions or retrain the model.
+3. Implement strict upload validation before inference:
+   - Catch non-image files with fake extensions (`Validation/not_an_image.jpg`).
+   - Catch corrupted/truncated images (`Validation/corrupt_image.png`).
+   - Catch low-resolution images (`Validation/too_small.png`, minimum 128x128).
+   - Store/log validation failures if required, but STRICTLY EXCLUDE invalid inputs from model metrics.
+4. Implement Role-Based Access Control (Operator vs. Supervisor roles).
+5. Implement Asynchronous Batch Processing using **Celery** and **Redis**:
+   - Allow uploading multiple images (e.g., the 60 images in `Samples/images/`).
+   - Queue batch jobs in Redis and process each image via a Celery worker calling `inference.predict()`.
+   - Calculate evaluation metrics (Accuracy, Precision, Recall, Confusion Matrix) against `Samples/labels.csv` for valid sample images only.
+6. Implement a **Supervisor Review** workflow where a Supervisor can review predictions, add notes, and approve or override `Normal` / `Defective` classifications.
+7. Use SQLite (via SQLAlchemy) for zero-config persistent storage of Products, Users/Roles, Batches, Inspections, Validation Errors, and Supervisor Reviews.
+
+### 2. EXACT EXISTING MODEL CODE (`Model/inference.py`)
+The file `Model/inference.py` is already present and exposes:
+- `MODEL_VERSION = "BIT-PLATE-CV-1.0"`
+- `CLASS_NAMES = ("Normal", "Defective")`
+- `predict(image_path, model_path=None)` -> returns:
+  `{"predicted_class": "Normal"|"Defective", "confidence": float, "defect_probability": float, "model_version": "BIT-PLATE-CV-1.0"}`
+  (Decision threshold is 0.5).
+
+### 3. DELIVERABLES NEEDED IN YOUR RESPONSE
+Generate the complete, modular codebase with no placeholders:
+1. `app.py` (Flask or FastAPI web application with routes for Login/Role Switch, Product P-PLATE01 Registration, Single Upload, Batch Upload with Celery status polling, Metrics Dashboard, and Supervisor Review Queue).
+2. `models.py` (SQLAlchemy database schema + seed script for Product `P-PLATE01` and default Operator/Supervisor users).
+3. `validators.py` (Strict PIL-based validation gate for corrupt, non-image, and too-small files).
+4. `celery_worker.py` (Celery + Redis configuration and batch processing task).
+5. `templates/` (Clean Bootstrap 5 HTML templates for Dashboard, Upload, Batch Status, Metrics, and Supervisor Review).
+6. `README.md` (Exact terminal commands to start Redis, start the Celery worker, initialize the DB, and run the web server).
