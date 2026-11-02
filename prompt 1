@@ -1,5 +1,131 @@
 You are a Senior Full-Stack Python Architect. Build a complete, working submission for the "Round 2 Student Challenge" (Automated Visual Inspection System for product P-PLATE01).
+# MASTER PROMPT 1 — ROUND 2 MANUFACTURING VISUAL INSPECTION PLATFORM
 
+You are a Senior Full-Stack Django Architect, Python Computer Vision Engineer, and Database Designer working directly inside an agentic IDE workspace.
+
+Your task is to implement a complete, working, competition-ready web application for the Round 2 Student Challenge: **AI Visual Quality Inspection using Python Full Stack**.
+
+This is an end-to-end implementation and verification task, not a design-only exercise. Work directly in the current project workspace where the Round 2 Student Pack files are located. Use the original specification files in the root directory as the single source of truth.
+
+---
+
+## 1. MANDATORY FIRST STEP: INSPECT THE PROJECT WORKSPACE
+
+All challenge pack files are in the workspace root directory. Inspect them completely before writing application code:
+
+- `START_HERE.txt`
+- `Round2_Student_Challenge_Brief.docx` / `Round2_Student_Challenge_Brief.pdf`
+- `Round2_Model_and_Data_Guide.docx` / `Round2_Model_and_Data_Guide.pdf`
+- `Model/inference.py`
+- `Model/model_metadata.json`
+- `product_details.csv`
+- `Samples/labels.csv`
+- `SHA256SUMS.txt`
+- `Validation/not_an_image.jpg`, `Validation/corrupt_image.png`, `Validation/too_small.png`
+- `Samples/images/inspection_001.png` through `inspection_060.jpg`
+
+**Agentic Terminal Rule for Reading Docs:**
+If your file reader tool cannot read `.pdf` or `.docx` binary files directly, run a quick one-line Python script in the terminal using `zipfile` + `xml.etree.ElementTree` (for the `.docx` files) or `pypdf` to extract and read the full text of `Round2_Student_Challenge_Brief.docx` and `Round2_Model_and_Data_Guide.docx`, plus print `product_details.csv` and `Samples/labels.csv`.
+
+Before writing any application code:
+1. Verify file integrity against `SHA256SUMS.txt`.
+2. Output a concise requirements checklist extracted from the official challenge brief and model/data guide.
+3. Do not invent functionality, CSV columns, model outputs, or competition rules that contradict the source files.
+
+---
+
+## 2. MANDATORY TECHNOLOGY STACK
+
+Use the exact stack required by the challenge:
+
+**Frontend:**
+- HTML5, CSS3, Vanilla JavaScript (ES6+), Bootstrap 5
+- Django Templates combined with real `fetch()` calls to Django REST Framework endpoints where appropriate (such as live batch polling and async actions)
+
+**Backend:**
+- Python 3
+- Django & Django REST Framework (DRF)
+
+**Database:**
+- PostgreSQL (preferred) or MySQL via Django ORM
+- Configure database credentials cleanly via environment variables (`.env` / `.env.example`) so the connection works seamlessly in the current terminal and during evaluation.
+
+**Background Processing:**
+- Celery
+- Redis (as both message broker and result backend)
+
+**Image Processing & ML:**
+- Pillow (`PIL`)
+- NumPy (`numpy`)
+
+**Strict Stack Constraints:**
+- Do NOT replace Django with Flask or FastAPI.
+- Do NOT replace PostgreSQL/MySQL with SQLite for the primary submitted configuration.
+- Do NOT introduce external AI APIs or unnecessary microservices.
+
+---
+
+## 3. USER ROLES, AUTHENTICATION, AND PERMISSIONS
+
+Implement real Django session/token authentication and three backend-enforced roles:
+
+**1. ADMINISTRATOR:**
+- Register, update, and manage supported products (specifically `P-PLATE01`).
+- Access Django Admin (`/admin/`) and product management views.
+- Manage application users and role assignments.
+
+**2. ENGINEER:**
+- Select active/supported products (`P-PLATE01`).
+- Upload single inspection images (`.jpg`/`.jpeg` or `.png`).
+- Upload asynchronous batches of 1–10 images.
+- View ONLY their own single and batch inspection history (`submitted_by = request.user`).
+- View detailed prediction results, confidence scores, defect probabilities, and validation error reasons.
+
+**3. SUPERVISOR:**
+- View ALL inspection records across all Engineers.
+- Filter inspections by predicted class (`Normal` / `Defective`) and review status (`Pending Review` / `Reviewed`).
+- Open completed inspections to view the image, original model output, and metadata.
+- Confirm or override/correct `Normal` / `Defective` predictions.
+- Add optional review comments.
+
+**CRITICAL SECURITY RULES:**
+- **Backend Enforcement:** Enforce role checks on every Django view and DRF APIView/ViewSet using custom permission classes (`IsAdministrator`, `IsEngineer`, `IsSupervisor`). Never rely solely on hiding frontend buttons.
+- **Privilege Escalation Prevention:** An Engineer must NEVER be able to create or modify a supervisor review by calling the API directly (e.g., via `curl` or `fetch`). Return **HTTP 403 Forbidden** for any unauthorized review request.
+- **Horizontal Data Isolation:** An Engineer querying another Engineer's inspection detail or batch status endpoint must receive **HTTP 403 Forbidden** or **HTTP 404 Not Found**.
+- **No Fake Role Switching:** Do not implement a frontend "switch role" dropdown without real user login. Instead, create a management command (`python manage.py seed_data`) that creates ready-to-use accounts (`admin`, `engineer1`, `engineer2`, `supervisor`) and display their login credentials clearly on the Login page for evaluators.
+
+---
+
+## 4. PRODUCT REGISTRATION (`P-PLATE01`)
+
+Register the supplied product using `product_details.csv` and `Round2_Model_and_Data_Guide.docx` as the authoritative schema source:
+
+- **Product ID:** `P-PLATE01`
+- Inspect `product_details.csv` first and match the exact columns defined in the CSV and Data Guide. Do not invent arbitrary columns.
+- Create a Django management command (`python manage.py register_products` or inside `seed_data`) that idempotently imports `product_details.csv` into PostgreSQL.
+- Register the `Product` model in Django Admin with proper list displays, search fields, and role restrictions so only Administrators can create, edit, or delete products.
+
+---
+
+## 5. FROZEN COMPUTER VISION MODEL INTEGRATION
+
+Use the existing files in the root `Model/` directory:
+- `Model/classifier.npz`
+- `Model/inference.py`
+- `Model/model_metadata.json`
+
+**Exact Reference Implementation Details (`Model/inference.py`):**
+- `MODEL_VERSION = "BIT-PLATE-CV-1.0"`
+- `CLASS_NAMES = ("Normal", "Defective")`
+- Decision threshold: `0.5` (`probability >= 0.5` -> `"Defective"`, else `"Normal"`)
+- Calling `predict(image_path)` returns:
+  ```json
+  {
+    "predicted_class": "Normal" | "Defective",
+    "confidence": 0.0,
+    "defect_probability": 0.0,
+    "model_version": "BIT-PLATE-CV-1.0"
+  }
 ### 1. CORE REQUIREMENTS (FROM START_HERE.txt)
 1. Register product `P-PLATE01` in the database (using `product_details.csv`).
 2. Use the existing `Model/inference.py` and `Model/classifier.npz` for real image inference. Do NOT mock predictions or retrain the model.
